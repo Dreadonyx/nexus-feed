@@ -96,33 +96,59 @@ Return ONLY valid JSON, no extra text:
 
         return article
 
-    def chat(self, message: str, articles: list, history: list) -> str:
-        # Build context from top articles
+    def chat(self, message: str, articles: list, history: list, web_results: list = None) -> str:
+        # Build feed context
         context_parts = []
-        for i, a in enumerate(articles[:20], 1):
+        for i, a in enumerate(articles[:15], 1):
             summary = a.get("summary") or a.get("content", "")[:200]
             tags = ", ".join(a.get("tags", []))
             context_parts.append(
-                f"[{i}] {a['title']}\nSource: {a['source']} | Score: {a.get('score', 0)} | Tags: {tags}\n{summary}"
+                f"[{i}] {a['title']}\nSource: {a['source']} | Tags: {tags}\n{summary}"
             )
-        context = "\n\n".join(context_parts)
+        feed_context = "\n\n".join(context_parts) or "No articles in feed yet."
 
-        system_prompt = f"""You are NexusFeed's AI assistant. Answer ONLY based on the articles in the user's feed below.
+        # Build web context
+        if web_results:
+            web_parts = []
+            for i, r in enumerate(web_results, 1):
+                web_parts.append(f"[W{i}] {r.get('title', '')}\n{r.get('body', '')}\nURL: {r.get('href', '')}")
+            web_context = "\n\n".join(web_parts)
+        else:
+            web_context = None
 
-FEED CONTEXT:
+        if web_context:
+            system_prompt = f"""You are NexusFeed's AI assistant for a student in Chennai, India.
+
+LIVE WEB SEARCH RESULTS (use these to answer):
 ---
-{context}
+{web_context}
+---
+
+FEED CONTEXT (secondary):
+---
+{feed_context}
 ---
 
 Rules:
-- ONLY use information from the feed above. Never use outside knowledge or make things up.
-- If the answer isn't in the feed, say: "Not in your current feed. Try running 'nexus fetch' to get more articles."
-- Be short and direct. No bullet lists unless there are 3+ items.
-- Cite article titles when referencing them.
-- For event questions: only list events explicitly mentioned in the feed."""
+- Answer using the web search results above. Be direct and specific.
+- Include URLs when relevant so the user can visit them.
+- Be concise. If it's an event, include: name, date, prize/stipend, how to apply.
+- Do not make up anything not in the sources above."""
+        else:
+            system_prompt = f"""You are NexusFeed's AI assistant for a student in Chennai, India.
+
+FEED CONTEXT:
+---
+{feed_context}
+---
+
+Rules:
+- Answer ONLY from the feed above. Never use outside knowledge.
+- If not in the feed, say exactly: "Not in your feed. Ask me to search the web for this."
+- Be short and direct. Cite article titles when referencing them."""
 
         messages = [{"role": "system", "content": system_prompt}]
-        for h in history[-6:]:  # last 3 exchanges
+        for h in history[-6:]:
             messages.append({"role": h["role"], "content": h["content"]})
         messages.append({"role": "user", "content": message})
 
@@ -131,11 +157,16 @@ Rules:
                 model=self.chat_model,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=600,
+                max_tokens=700,
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
             return f"[Error] {e}"
+
+    def needs_web_search(self, message: str, feed_answer: str) -> bool:
+        """Check if the AI indicated it needs web search."""
+        indicators = ["not in your feed", "try running", "search the web", "no mention", "not found"]
+        return any(ind in feed_answer.lower() for ind in indicators)
 
     def generate_digest_intro(self, articles: list) -> str:
         if not articles:

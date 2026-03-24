@@ -2,25 +2,26 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.markdown import Markdown
-from rich.text import Text
+from src.search import web_search
 
 console = Console()
 
 
 HELP_TEXT = """
-[bold cyan]NexusFeed Chat[/bold cyan] — Ask anything about your feed
+[bold cyan]NexusFeed Chat[/bold cyan] — Ask anything. Searches the web live if needed.
 
 Commands:
-  [yellow]/search <query>[/yellow]    Search articles by keyword
+  [yellow]/web <query>[/yellow]       Force a live web search
+  [yellow]/search <query>[/yellow]    Search your local feed
   [yellow]/top[/yellow]               Show top scored articles
   [yellow]/events[/yellow]            List upcoming events
   [yellow]/clear[/yellow]             Clear chat history
   [yellow]/quit[/yellow] or [yellow]/q[/yellow]       Exit chat
 
-Example questions:
-  "What's the biggest AI news this week?"
-  "Summarize all cybersecurity alerts"
-  "Are there any upcoming conferences?"
+Just ask naturally — web search triggers automatically when needed:
+  "Any OpenAI events with prize money?"
+  "Hackathons for students in India 2026"
+  "Internships at Indian AI startups"
   "What's trending in open source?"
 """
 
@@ -61,6 +62,23 @@ class ChatSession:
                 self.db.clear_chat_history()
                 history = []
                 console.print("[green]Chat history cleared.[/green]\n")
+                continue
+
+            elif user_input.lower().startswith("/web "):
+                query = user_input[5:].strip()
+                console.print("[dim]searching the web...[/dim]", end="\r")
+                results = web_search(query, max_results=6)
+                console.print(" " * 30, end="\r")
+                if results:
+                    response = self.ai.chat(query, context_articles, history, web_results=results)
+                    console.print(Panel(
+                        Markdown(response),
+                        title="[bold green]nexus[/bold green] [dim cyan]· live search[/dim cyan]",
+                        border_style="green", padding=(0, 1)
+                    ))
+                else:
+                    console.print("[yellow]No web results found.[/yellow]")
+                console.print()
                 continue
 
             elif user_input.lower().startswith("/search "):
@@ -117,15 +135,43 @@ class ChatSession:
             # Save user message
             self.db.save_chat_message("user", user_input)
 
-            # Get AI response
-            console.print("[dim]thinking...[/dim]", end="\r")
-            response = self.ai.chat(user_input, context_articles, history)
+            # Check if query needs live search (events, hackathons, etc.)
+            live_keywords = ["hackathon", "internship", "fellowship", "event", "competition",
+                             "contest", "prize", "apply", "ongoing", "current", "latest",
+                             "openai", "google", "microsoft", "job", "hiring", "conference"]
+            needs_live = any(kw in user_input.lower() for kw in live_keywords)
 
-            # Clear "thinking" line and show response
-            console.print(" " * 20, end="\r")
+            if needs_live:
+                console.print("[dim]searching the web...[/dim]", end="\r")
+                search_query = self._build_search_query(user_input)
+                results = web_search(search_query, max_results=6)
+                if results:
+                    response = self.ai.chat(user_input, context_articles, history, web_results=results)
+                    source_label = "[bold green]nexus[/bold green] [dim cyan]· live search[/dim cyan]"
+                else:
+                    console.print("[dim]thinking...[/dim]", end="\r")
+                    response = self.ai.chat(user_input, context_articles, history)
+                    source_label = "[bold green]nexus[/bold green]"
+            else:
+                console.print("[dim]thinking...[/dim]", end="\r")
+                response = self.ai.chat(user_input, context_articles, history)
+                # Fallback to web if feed has no answer
+                if self.ai.needs_web_search(user_input, response):
+                    console.print("[dim]searching the web...[/dim]", end="\r")
+                    results = web_search(self._build_search_query(user_input), max_results=6)
+                    if results:
+                        response = self.ai.chat(user_input, context_articles, history, web_results=results)
+                        source_label = "[bold green]nexus[/bold green] [dim cyan]· live search[/dim cyan]"
+                    else:
+                        source_label = "[bold green]nexus[/bold green]"
+                else:
+                    source_label = "[bold green]nexus[/bold green]"
+
+            # Show response
+            console.print(" " * 30, end="\r")
             console.print(Panel(
                 Markdown(response),
-                title="[bold green]nexus[/bold green]",
+                title=source_label,
                 border_style="green",
                 padding=(0, 1)
             ))
@@ -135,6 +181,15 @@ class ChatSession:
             history.append({"role": "user", "content": user_input})
             history.append({"role": "assistant", "content": response})
             console.print()
+
+    def _build_search_query(self, text: str) -> str:
+        """Build a focused search query, appending India/student context."""
+        base = text.strip().rstrip("?")
+        # Add India context for event/opportunity queries
+        event_words = ["event", "hackathon", "internship", "fellowship", "competition", "prize", "contest", "apply"]
+        if any(w in text.lower() for w in event_words):
+            return f"{base} India students 2025 2026"
+        return base
 
     def _extract_search_terms(self, text: str) -> str:
         # Simple heuristic: extract key nouns/topics for targeted search
