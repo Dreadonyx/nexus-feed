@@ -30,6 +30,7 @@ class Database:
                 sentiment TEXT,
                 is_event INTEGER DEFAULT 0,
                 event_date TEXT,
+                student_action TEXT,
                 published_at TEXT,
                 fetched_at TEXT DEFAULT CURRENT_TIMESTAMP,
                 bookmarked INTEGER DEFAULT 0,
@@ -57,8 +58,8 @@ class Database:
         self.conn.execute("""
             INSERT OR IGNORE INTO articles
             (url, title, source, content, summary, key_points, score, tags, sentiment,
-             is_event, event_date, published_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             is_event, event_date, student_action, published_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             article.get("url"),
             article.get("title"),
@@ -71,6 +72,7 @@ class Database:
             article.get("sentiment", "neutral"),
             int(article.get("is_event", False)),
             article.get("event_date"),
+            article.get("student_action"),
             article.get("published_at"),
         ))
         self.conn.commit()

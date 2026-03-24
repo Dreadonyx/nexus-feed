@@ -13,39 +13,57 @@ class AIClient:
         self.model = groq_cfg.get("model", "llama-3.1-8b-instant")
         self.chat_model = groq_cfg.get("chat_model", "llama-3.3-70b-versatile")
         self.topics = config.get("topics", [])
+        self.config = config
 
     def enrich_article(self, article: dict) -> dict:
         title = article.get("title", "")
         content = article.get("content", "")
         topics_str = ", ".join(self.topics)
 
-        prompt = f"""Analyze this tech news article and return a JSON object.
+        profile = self.config.get("profile", {})
+        location = profile.get("location", "India")
+        user_type = profile.get("type", "student")
+
+        prompt = f"""Analyze this tech news article for a {user_type} based in {location}.
 
 Title: {title}
 Content: {content[:600]}
 
-User's topics of interest: {topics_str}
+Topics of interest: {topics_str}
 
-Return ONLY valid JSON with these exact keys:
+Score 9-10 for: hackathons, internships, fellowships, open source programs (GSoC, MLH), student competitions, startup funding news, job/opportunity announcements, India/Chennai-specific tech news.
+Score 6-8 for: new tools/frameworks students can use, startup launches, AI breakthroughs, open source project launches.
+Score 3-5 for: general tech news with some relevance.
+Score 1-2 for: enterprise/corporate news, politics, stock markets, irrelevant noise.
+
+Return ONLY valid JSON:
 {{
-  "summary": "2-3 sentence summary",
+  "summary": "1-2 sentence summary, mention if students can participate or apply",
   "key_points": ["point1", "point2", "point3"],
-  "score": <integer 1-10, relevance to user topics>,
+  "score": <integer 1-10>,
   "tags": ["tag1", "tag2", "tag3"],
   "sentiment": "positive" | "negative" | "neutral",
   "is_event": true | false,
-  "event_date": "YYYY-MM-DD or null"
-}}
-
-Score 8-10 only for major, genuinely important news. Score 1-3 for irrelevant/noise."""
+  "event_date": "YYYY-MM-DD or null",
+  "student_action": "short action if student can do something, else null"
+}}"""
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-                max_tokens=400,
-            )
+            import time
+            for attempt in range(3):
+                try:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.2,
+                        max_tokens=400,
+                    )
+                    break
+                except Exception as e:
+                    if "rate_limit" in str(e).lower() and attempt < 2:
+                        time.sleep(4)
+                        continue
+                    raise
             text = response.choices[0].message.content.strip()
             # Extract JSON from response
             match = re.search(r'\{.*\}', text, re.DOTALL)
@@ -59,6 +77,7 @@ Score 8-10 only for major, genuinely important news. Score 1-3 for irrelevant/no
                     "sentiment": data.get("sentiment", "neutral"),
                     "is_event": bool(data.get("is_event", False)),
                     "event_date": data.get("event_date"),
+                    "student_action": data.get("student_action"),
                 })
         except Exception as e:
             console.print(f"[dim red]AI enrich failed for '{title[:40]}': {e}[/dim red]")

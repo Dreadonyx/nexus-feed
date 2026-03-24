@@ -123,9 +123,13 @@ class DigestGenerator:
         console.print(title_line)
         console.print(meta_line)
 
+        student_action = article.get("student_action")
+
         if not compact:
             if summary:
                 console.print(f"     [dim]{summary}[/dim]")
+            if student_action:
+                console.print(f"     [bold green]→ {student_action}[/bold green]")
             if key_points:
                 for point in key_points[:2]:
                     console.print(f"     [dim cyan]• {point}[/dim cyan]")
@@ -135,6 +139,8 @@ class DigestGenerator:
         else:
             if summary:
                 console.print(f"     [dim]{summary[:120]}[/dim]")
+            if student_action:
+                console.print(f"     [bold green]→ {student_action}[/bold green]")
 
         console.print(f"     [dim]ID: {article_id}[/dim]")
         console.print()
