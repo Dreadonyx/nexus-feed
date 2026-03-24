@@ -10,8 +10,8 @@ class AIClient:
     def __init__(self, config: dict):
         groq_cfg = config.get("groq", {})
         self.client = Groq(api_key=groq_cfg.get("api_key"))
-        self.model = groq_cfg.get("model", "llama3-8b-8192")
-        self.chat_model = groq_cfg.get("chat_model", "llama3-70b-8192")
+        self.model = groq_cfg.get("model", "llama-3.1-8b-instant")
+        self.chat_model = groq_cfg.get("chat_model", "llama-3.3-70b-versatile")
         self.topics = config.get("topics", [])
 
     def enrich_article(self, article: dict) -> dict:
