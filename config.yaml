@@ -1,0 +1,65 @@
+groq:
+  api_key: "YOUR_GROQ_API_KEY"
+  model: "llama3-8b-8192"
+  chat_model: "llama3-70b-8192"
+
+topics:
+  - AI
+  - machine learning
+  - cybersecurity
+  - open source
+  - web development
+  - programming
+  - startups
+
+sources:
+  rss:
+    - name: "TechCrunch"
+      url: "https://techcrunch.com/feed/"
+    - name: "The Verge"
+      url: "https://www.theverge.com/rss/index.xml"
+    - name: "Ars Technica"
+      url: "https://feeds.arstechnica.com/arstechnica/index"
+    - name: "MIT Tech Review"
+      url: "https://www.technologyreview.com/feed/"
+    - name: "Wired"
+      url: "https://www.wired.com/feed/rss"
+    - name: "Dev.to"
+      url: "https://dev.to/feed"
+
+  hackernews:
+    enabled: true
+    min_points: 50
+    count: 20
+
+  reddit:
+    enabled: true
+    subreddits:
+      - programming
+      - MachineLearning
+      - netsec
+      - technology
+      - artificial
+    count: 10
+
+  github_trending:
+    enabled: true
+
+notifications:
+  desktop: true
+  terminal: true
+
+digest:
+  top_n: 15
+  min_score: 5
+  group_by_topic: true
+
+alerts:
+  keywords:
+    - "CVE"
+    - "zero-day"
+    - "breach"
+    - "GPT-5"
+    - "Anthropic"
+    - "OpenAI"
+    - "vulnerability"
