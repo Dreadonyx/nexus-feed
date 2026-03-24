@@ -1,3 +1,4 @@
+import html as html_lib
 from datetime import datetime
 from pathlib import Path
 from rich.console import Console
@@ -94,10 +95,10 @@ class DigestGenerator:
     def _render_article(self, idx: int, article: dict, compact: bool = False):
         score = article.get("score", 0)
         sentiment = article.get("sentiment", "neutral")
-        title = article.get("title", "Untitled")
+        title = html_lib.unescape(article.get("title", "Untitled"))
         source = article.get("source", "")
         url = article.get("url", "")
-        summary = article.get("summary", "")
+        summary = html_lib.unescape(article.get("summary", ""))
         key_points = article.get("key_points", [])
         tags = article.get("tags", [])
         bookmarked = article.get("bookmarked", 0)
@@ -146,15 +147,18 @@ class DigestGenerator:
         console.print()
 
     def _show_events(self, events: list):
+        # Only show events with actual dates
+        dated = [e for e in events if e.get("event_date") and e.get("event_date") != "null"]
+        if not dated:
+            return
         console.print("[bold yellow]◆ UPCOMING EVENTS[/bold yellow]")
         table = Table(box=box.SIMPLE, show_header=False, padding=(0, 1))
         table.add_column("Date", style="yellow", width=12)
         table.add_column("Event", style="white")
         table.add_column("Source", style="dim", width=20)
 
-        for e in events[:8]:
-            date = e.get("event_date") or "TBD"
-            table.add_row(date, e.get("title", "")[:70], e.get("source", ""))
+        for e in dated[:6]:
+            table.add_row(e["event_date"], html_lib.unescape(e.get("title", ""))[:70], e.get("source", ""))
 
         console.print(table)
 

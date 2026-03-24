@@ -158,9 +158,10 @@ class Fetcher:
                 stars = stars_el[0].get_text(strip=True) if stars_el else "?"
                 lang_el = repo.select_one("span[itemprop='programmingLanguage']")
                 lang = lang_el.get_text(strip=True) if lang_el else ""
+                clean_name = name.replace("//", "/").strip("/")
                 articles.append({
-                    "url": f"https://github.com/{name.lstrip('/')}",
-                    "title": f"[GitHub] {name} — {desc[:70]}",
+                    "url": f"https://github.com/{clean_name}",
+                    "title": f"[GitHub] {clean_name} — {desc[:70]}",
                     "source": "GitHub Trending",
                     "content": f"Language: {lang} | Stars: {stars} | {desc}",
                     "published_at": datetime.utcnow().isoformat(),

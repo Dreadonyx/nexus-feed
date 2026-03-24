@@ -31,21 +31,24 @@ Content: {content[:600]}
 
 Topics of interest: {topics_str}
 
-Score 9-10 for: hackathons, internships, fellowships, open source programs (GSoC, MLH), student competitions, startup funding news, job/opportunity announcements, India/Chennai-specific tech news.
-Score 6-8 for: new tools/frameworks students can use, startup launches, AI breakthroughs, open source project launches.
-Score 3-5 for: general tech news with some relevance.
-Score 1-2 for: enterprise/corporate news, politics, stock markets, irrelevant noise.
+Scoring rules (be strict and accurate):
+- Score 9-10 ONLY if the article is LITERALLY about: an open hackathon/competition to apply to, an internship/fellowship posting, a student program (GSoC, MLH), a grant/scholarship, or a Chennai/India-specific opportunity.
+- Score 7-8 for: Indian startup funding news, useful open source projects to contribute to, AI/tech breakthroughs relevant to students learning.
+- Score 4-6 for: general tech news, GitHub repos, career discussions.
+- Score 1-3 for: enterprise software, politics, stock market, irrelevant corporate news.
 
-Return ONLY valid JSON:
+Tags must be real descriptive keywords from the article (e.g. "python", "funding", "AI", "startup"), NOT generic words like "hackathon" unless the article is literally about one.
+
+Return ONLY valid JSON, no extra text:
 {{
-  "summary": "1-2 sentence summary, mention if students can participate or apply",
+  "summary": "One clean sentence summarizing what this article is actually about.",
   "key_points": ["point1", "point2", "point3"],
   "score": <integer 1-10>,
   "tags": ["tag1", "tag2", "tag3"],
   "sentiment": "positive" | "negative" | "neutral",
   "is_event": true | false,
   "event_date": "YYYY-MM-DD or null",
-  "student_action": "short action if student can do something, else null"
+  "student_action": "One specific action a student can take, or null if not applicable"
 }}"""
 
         try:
