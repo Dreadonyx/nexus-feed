@@ -65,13 +65,20 @@ class ChatSession:
 
             elif user_input.lower().startswith("/search "):
                 query = user_input[8:].strip()
+                # Try full phrase first, then individual keywords
                 results = self.db.search_articles(query, limit=10)
+                if not results:
+                    for word in query.split():
+                        if len(word) > 3:
+                            results = self.db.search_articles(word, limit=10)
+                            if results:
+                                break
                 if results:
-                    console.print(f"\n[bold]Found {len(results)} articles for '{query}':[/bold]")
+                    console.print(f"\n[bold]Found {len(results)} articles:[/bold]")
                     for a in results:
                         console.print(f"  [cyan]•[/cyan] [white]{a['title']}[/white]  [dim]{a['source']}[/dim]")
                 else:
-                    console.print(f"[yellow]No results for '{query}'[/yellow]")
+                    console.print(f"[yellow]Nothing in your feed matches '{query}'. Try fetching more articles.[/yellow]")
                 console.print()
                 continue
 
