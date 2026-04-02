@@ -1,20 +1,20 @@
-# NexusFeed
+# nexus-feed 📡
 
-AI-powered tech news aggregator for the terminal. Fetches from RSS, Hacker News, Reddit, and GitHub Trending — summarizes with Groq, scores by relevance, and lets you **chat with your feed**.
+> Tech news aggregator for the terminal. Fetch, summarize, and actually talk to your feed.
+
+I got tired of opening 10 tabs to stay updated. nexus-feed pulls from RSS, Hacker News, Reddit, and GitHub Trending — scores everything by relevance, and lets you chat with your feed like it's a person.
 
 ## Features
 
-- **Multi-source fetching** — RSS feeds, Hacker News, Reddit, GitHub Trending
-- **AI enrichment** — Groq (LLaMA3) summarizes articles, scores relevance 1-10, extracts tags and sentiment
-- **Chat with your feed** — Ask "what's the biggest AI news this week?" and get answers from your actual articles
-- **Trend radar** — See which topics are spiking vs last week
-- **Event detection** — Auto-detects conferences, launches, deadlines in articles
-- **Smart dedup** — Same story from multiple sources shown once
-- **Keyword alerts** — Instant flag when CVEs, breaches, or your custom keywords appear
-- **Bookmarks** — Save articles to read later
-- **Export digest** — Save daily digest as markdown
-- **Rich TUI** — Interactive terminal UI with navigation
-- **Daemon mode** — Runs on a schedule, sends desktop notifications
+- Multi-source fetching — RSS, Hacker News, Reddit, GitHub Trending
+- AI enrichment — Groq summarizes articles, scores relevance 1–10, extracts tags and sentiment
+- Chat mode — ask "what's the biggest AI news this week?" and get answers from your actual fetched articles
+- Trend radar — see which topics are spiking vs last week
+- Event detection — auto-flags conferences, launches, deadlines
+- Keyword alerts — instant flag when CVEs, breaches, or custom keywords appear
+- Bookmarks + markdown digest export
+- Rich interactive TUI
+- Daemon mode with desktop notifications
 
 ## Setup
 
@@ -22,54 +22,35 @@ AI-powered tech news aggregator for the terminal. Fetches from RSS, Hacker News,
 git clone https://github.com/Dreadonyx/nexus-feed
 cd nexus-feed
 pip install -r requirements.txt
+# add your Groq API key to config.yaml
+python main.py fetch
 ```
-
-Edit `config.yaml` and add your Groq API key (get one free at console.groq.com).
 
 ## Usage
 
 ```bash
-# Fetch latest news and enrich with AI
-python main.py fetch
-
-# Show today's ranked digest
-python main.py digest
-
-# Chat with your feed
-python main.py chat
-
-# Trend radar
-python main.py trends
-
-# Interactive TUI
-python main.py tui
-
-# Keyword alerts
-python main.py alerts
-
-# Bookmarks
-python main.py bookmarks
-
-# Stats
-python main.py stats
-
-# Run as daemon (fetches every 60 minutes)
-python main.py daemon --interval 60
+python main.py fetch       # pull and enrich articles
+python main.py digest      # today's ranked digest
+python main.py chat        # chat with your feed
+python main.py trends      # what's spiking this week
+python main.py tui         # interactive mode
+python main.py alerts      # keyword alerts
+python main.py bookmarks   # saved articles
+python main.py stats       # feed stats
+python main.py daemon --interval 60  # run in background
 ```
 
 ## Config
 
-Edit `config.yaml` to customize:
+Edit `config.yaml` to set:
 - **topics** — what you care about (used for relevance scoring)
-- **sources** — RSS feeds, enable/disable HN, Reddit, GitHub Trending
+- **sources** — RSS feeds, toggle HN / Reddit / GitHub Trending
 - **alerts.keywords** — words that trigger immediate alerts
-- **digest.min_score** — minimum AI score to show in digest (1-10)
+- **digest.min_score** — minimum AI score to appear in digest (1–10)
 
 ## Stack
 
-- **Groq API** (LLaMA3-8b for enrichment, LLaMA3-70b for chat)
-- **feedparser** — RSS parsing
-- **httpx** — HTTP client
-- **Rich + Typer** — Terminal UI and CLI
-- **SQLite** — Local article storage
-- **BeautifulSoup** — HTML parsing
+- Groq API (LLaMA3-8b for enrichment, LLaMA3-70b for chat)
+- feedparser, httpx, BeautifulSoup
+- Rich + Typer
+- SQLite
